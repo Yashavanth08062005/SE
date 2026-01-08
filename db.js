@@ -19,9 +19,9 @@ const initDb = async () => {
         id SERIAL PRIMARY KEY,
         username VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        name VARCHAR(255),
-        meta VARCHAR(255),
         company VARCHAR(255),
+        name VARCHAR(255),
+        meta TEXT,
         avatar TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
@@ -42,7 +42,7 @@ const initDb = async () => {
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
         linked_user_id INT,
         name VARCHAR(100),
-        company TEXT
+        company VARCHAR(255)
       );
     `);
 
@@ -86,14 +86,15 @@ const initDb = async () => {
       } catch (e) { console.log(`Migration note: ${e.message}`); }
     };
 
-    await addCol('users', 'name', 'VARCHAR(255)');
-    await addCol('users', 'meta', 'VARCHAR(255)');
     await addCol('users', 'company', 'VARCHAR(255)');
+    await addCol('users', 'name', 'VARCHAR(255)');
+    await addCol('users', 'meta', 'TEXT');
     await addCol('users', 'avatar', 'TEXT');
     await addCol('users', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
     await addCol('skills', 'company', 'VARCHAR(100)');
     await addCol('peer_skills', 'company', 'VARCHAR(100)');
     await addCol('peers', 'linked_user_id', 'INT');
+    await addCol('peers', 'company', 'VARCHAR(255)');
 
     // Migration for resources
     await addCol('resources', 'skill', 'VARCHAR(100)');
@@ -103,8 +104,16 @@ const initDb = async () => {
     await addCol('resources', 'author', 'VARCHAR(255)');
     await addCol('resources', 'peer_index', 'INT');
 
-    // Fix peers company type to TEXT (for JSON)
-    try { await pool.query("ALTER TABLE peers ALTER COLUMN company TYPE TEXT"); } catch (e) { }
+
+
+    // Ensure unique constraint on peers.user_id - REMOVED to allow multiple peers
+    /*
+    try {
+      await pool.query("ALTER TABLE peers ADD CONSTRAINT unique_peer_user_id UNIQUE (user_id)");
+    } catch (e) {
+      // Ignore if constraint already exists
+    }
+    */
 
     console.log("✅ Database tables ready");
   } catch (err) {
